@@ -81,12 +81,22 @@ class PostDetailView(View):
 			Comment.objects.create(post=post, author=request.user, content=content)
 		return redirect('post_detail', post_id=post.id)
 
-# FLAW 5: Server-Side Request Forgery (SSRF)
-# This code fetches the website title from any URL provided by the user without validation.
+
 import requests
 import re
 
 from django.http import HttpResponseForbidden
+
+from django.contrib.auth.decorators import login_required
+@login_required
+def edit_profile(request):
+	profile = get_object_or_404(UserProfile, user=request.user)
+	if request.method == 'POST':
+		website_url = request.POST.get('website_url')
+		profile.website_url = website_url
+		profile.save()
+		return redirect('profile')
+	return render(request, 'blog/edit_profile.html', {'profile': profile})
 
 @login_required
 def profile_view(request, user_id=None):
@@ -95,41 +105,41 @@ def profile_view(request, user_id=None):
 	if user_id is not None:
 		profile = get_object_or_404(UserProfile, user__id=user_id)
 		user = profile.user
-		# --- FIX (uncomment the next 3 lines to secure, see README for instructions) ---
+		# --- FIX (uncomment the next 2 lines to secure, see README for instructions) ---
 		# if request.user.id != user_id:
-		#     # Only allow users to view their own profile
 		#     return HttpResponseForbidden("You are not allowed to view this profile.")
 	else:
 		profile = get_object_or_404(UserProfile, user=request.user)
 		user = request.user
 
+	# FLAW 5: Server-Side Request Forgery (SSRF, OWASP A10:2021)
+	# VULNERABLE: The following block fetches the website title from ANY user-provided URL, allowing SSRF attacks.
+	# To FIX: Comment out the vulnerable block below and UNcomment the secure block to restrict to safe domains only.
 	website_title = None
 	if profile.website_url:
 		try:
-			# FLAW 5: SSRF - Fetch any URL provided by the user (SSRF)
+			# --- SSRF FLAW: VULNERABLE CODE (leave uncommented to demonstrate flaw) ---
 			resp = requests.get(profile.website_url, timeout=3)
 			match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE | re.DOTALL)
 			if match:
 				website_title = match.group(1).strip()
+			# --- END VULNERABLE CODE ---
+			# --- FIX (uncomment the next block and comment out the vulnerable block above to secure) ---
+			# from urllib.parse import urlparse
+			# allowed_domains = ['example.com', 'github.com']
+			# parsed = urlparse(profile.website_url)
+			# if parsed.hostname not in allowed_domains:
+			#     website_title = None
+			# else:
+			#     resp = requests.get(profile.website_url, timeout=3)
+			#     match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE | re.DOTALL)
+			#     if match:
+			#         website_title = match.group(1).strip()
 		except Exception:
 			website_title = None
-		# --- FIX (commented out): Only allow safe external domains ---
-		# from urllib.parse import urlparse
-		# allowed_domains = ['example.com', 'github.com']
-		# parsed = urlparse(profile.website_url)
-		# if parsed.hostname not in allowed_domains:
-		#     website_title = None
-		# else:
-		#     resp = requests.get(profile.website_url, timeout=3)
-		#     match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE | re.DOTALL)
-		#     if match:
-		#         website_title = match.group(1).strip()
 
 	return render(request, 'blog/profile.html', {'user': user, 'profile': profile, 'website_title': website_title})
 
-# FLAW 2: SQL Injection
-# This view is vulnerable because it uses raw SQL with string concatenation.
-# User input is directly inserted into the SQL query, allowing SQL injection attacks.
 from django.db import connection
 
 class SearchView(View):
@@ -137,15 +147,17 @@ class SearchView(View):
 		query = request.GET.get('q', '')
 		results = []
 		if query:
-			# VULNERABLE: Directly inserting user input into SQL string
+			# FLAW 2: SQL Injection (OWASP A03:2021)
+			# VULNERABLE: This block is intentionally unsafe for demonstration.
+			# It directly inserts user input into the SQL query string.
 			sql = "SELECT * FROM blog_blogpost WHERE title LIKE '%" + query + "%' OR content LIKE '%" + query + "%'"
 			with connection.cursor() as cursor:
 				cursor.execute(sql)  # User input is not sanitized!
 				columns = [col[0] for col in cursor.description]
 				for row in cursor.fetchall():
 					results.append(dict(zip(columns, row)))
-			# --- FIX (commented out): Use Django ORM or parameterized queries ---
-			# results = BlogPost.objects.filter(Q(title__icontains=query) | Q(content__icontains=query))
-			# OR
-			# cursor.execute("SELECT * FROM blog_blogpost WHERE title LIKE %s OR content LIKE %s", [f"%{query}%", f"%{query}%"])
+			# --- FIX (comment out the vulnerable block above and uncomment the next line to secure) ---
+			# results = list(BlogPost.objects.filter(Q(title__icontains=query) | Q(content__icontains=query)))
+			# (No raw SQL, ORM safely escapes user input)
+
 		return render(request, 'blog/search.html', {'results': results, 'request': request})

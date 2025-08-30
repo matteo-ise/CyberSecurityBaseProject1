@@ -1,0 +1,18 @@
+<!--
+edit_profile.html
+Edit user profile (only website URL for SSRF demo).
+-->
+{% extends 'blog/base.html' %}
+{% block title %}Edit Profile - CyberSec Blog{% endblock %}
+{% block content %}
+<h2>Edit Profile</h2>
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="website_url" class="form-label">Website URL</label>
+    <input type="url" class="form-control" id="website_url" name="website_url" value="{{ profile.website_url }}" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Save</button>
+  <a href="{% url 'profile' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

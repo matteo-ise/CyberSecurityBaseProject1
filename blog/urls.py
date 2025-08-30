@@ -11,6 +11,7 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),  # Register page
     path('post/<int:post_id>/', views.PostDetailView.as_view(), name='post_detail'),  # Post detail
     path('profile/', views.profile_view, name='profile'),  # View own profile
+    path('profile/edit/', views.edit_profile, name='edit_profile'),  # Edit own profile (for SSRF demo)
     path('profile/<int:user_id>/', views.profile_view, name='profile_other'),  # FLAW: View any user's profile
     path('logout/', views.logout_view, name='logout'),  # Add logout route
     path('search/', views.SearchView.as_view(), name='search'),  # Search page

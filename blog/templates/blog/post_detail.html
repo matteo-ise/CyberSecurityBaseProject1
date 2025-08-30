@@ -15,11 +15,13 @@ Show individual blog post with comments.
   <ul class="list-group mb-3">
     {% for comment in comments %}
       <li class="list-group-item">
-        <strong>{{ comment.author.username }}</strong> ({{ comment.created_date|date:"M d, Y H:i" }}):<br>
-  {# FLAW 3: XSS - Using |safe filter allows HTML/JS in comments #}
-  {{ comment.content|safe }}
-  {# --- FIX (commented out): Remove |safe to escape HTML properly --- #}
-  {# {{ comment.content }} #}
+      <strong>{{ comment.author.username }}</strong> ({{ comment.created_date|date:"M d, Y H:i" }}):<br>
+      {# FLAW 3: XSS (OWASP A03:2021)
+        VULNERABLE: The next line uses the |safe filter, allowing HTML/JS injection from comments.
+        To FIX: Comment out the |safe line and UNcomment the secure line below it. #}
+      {{ comment.content|safe }}
+      {# --- FIX (uncomment the next line and comment out the |safe line above to secure) --- #}
+      {# {{ comment.content }} #}
       </li>
     {% empty %}
       <li class="list-group-item">No comments yet.</li>

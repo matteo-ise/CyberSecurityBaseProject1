@@ -18,4 +18,21 @@ Simple login form.
   </div>
   <button type="submit" class="btn btn-primary">Login</button>
 </form>
+
+{% comment %}
+FLAW 4: Security Logging and Monitoring Failures (OWASP A09:2021)
+VULNERABLE: The next block shows specific error messages, revealing if a username exists or if the password is wrong.
+To FIX: Comment out the block below and UNcomment the secure block to use a generic error message.
+{% endcomment %}
+{% if error %}
+  <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+{% comment %}
+--- FIX (uncomment the next block and comment out the block above to secure)
+{% endcomment %}
+{% comment %}
+{% if error %}
+  <div class="alert alert-danger mt-3">Invalid username or password</div>
+{% endif %}
+{% endcomment %}
 {% endblock %}
