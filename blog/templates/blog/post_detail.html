@@ -1,0 +1,41 @@
+<!--
+post_detail.html
+Show individual blog post with comments.
+-->
+{% extends 'blog/base.html' %}
+{% block title %}{{ post.title }} - CyberSec Blog{% endblock %}
+{% block content %}
+<article class="mb-4">
+  <h2>{{ post.title }}</h2>
+  <p class="text-muted">By {{ post.author.username }} on {{ post.created_date|date:"M d, Y H:i" }}</p>
+  <div class="mb-3">{{ post.content }}</div>
+</article>
+<section>
+  <h4>Comments</h4>
+  <ul class="list-group mb-3">
+    {% for comment in comments %}
+      <li class="list-group-item">
+        <strong>{{ comment.author.username }}</strong> ({{ comment.created_date|date:"M d, Y H:i" }}):<br>
+  {# FLAW 3: XSS - Using |safe filter allows HTML/JS in comments #}
+  {{ comment.content|safe }}
+  {# --- FIX (commented out): Remove |safe to escape HTML properly --- #}
+  {# {{ comment.content }} #}
+      </li>
+    {% empty %}
+      <li class="list-group-item">No comments yet.</li>
+    {% endfor %}
+  </ul>
+  {% if user.is_authenticated %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="content" class="form-label">Add a comment:</label>
+      <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Post Comment</button>
+  </form>
+  {% else %}
+    <p><a href="{% url 'login' %}">Login</a> to comment.</p>
+  {% endif %}
+</section>
+{% endblock %}

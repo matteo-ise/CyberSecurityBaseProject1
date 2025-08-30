@@ -1,0 +1,27 @@
+<!--
+profile.html
+User profile page.
+-->
+{% extends 'blog/base.html' %}
+{% block title %}Profile - CyberSec Blog{% endblock %}
+{% block content %}
+<h2>User Profile</h2>
+<div class="card" style="max-width: 400px;">
+  <div class="card-body">
+    <h5 class="card-title">{{ user.username }}</h5>
+    <p class="card-text"><strong>Email:</strong> {{ user.email }}</p>
+    <p class="card-text"><strong>Bio:</strong> {{ profile.bio }}</p>
+    <p class="card-text"><strong>Website:</strong> <a href="{{ profile.website_url }}" target="_blank">{{ profile.website_url }}</a></p>
+    {# FLAW 5: SSRF - Display fetched website title from user-provided URL #}
+    {% if website_title %}
+      <p class="card-text"><strong>Website Title:</strong> {{ website_title }}</p>
+    {% endif %}
+    {# --- FIX (commented out): Only display title if URL is validated as safe --- #}
+    {# Example fix: Only display title if URL is validated in the view, not in the template. #}
+    {# {% if website_title and url_is_safe %}
+         <p class="card-text"><strong>Website Title:</strong> {{ website_title }}</p>
+       {% endif %} #}
+    <p class="card-text"><strong>Phone:</strong> {{ profile.phone_number }}</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+# requirements.txt
+# This file lists all Python packages required to run this project.
+# Use 'pip install -r requirements.txt' to install them.
+django==4.2
+requests
